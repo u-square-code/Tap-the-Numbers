@@ -141,8 +141,8 @@
         border-radius: 15px;
         color: white;
         font-size: 2.2em;
-        font-weight: 950;
-        font-family: Arial Black, Arial, Helvetica, sans-serif;
+        font-weight: bold;
+        font-family: -apple-system, BlinkMacSystemFont, "Arial Black", Arial, Helvetica, sans-serif;
         cursor: pointer;
         transition: all 0.2s ease;
         box-shadow: 0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3);
@@ -156,6 +156,7 @@
         user-select: none;
         -webkit-user-select: none;
         -webkit-tap-highlight-color: transparent;
+        -webkit-font-smoothing: antialiased;
     }
 
     /* 光沢エフェクト */
@@ -360,7 +361,7 @@
         }
         
         .number-tile {
-            font-size: 1.9em;
+            font-size: 1.6em;
             min-height: 45px;
             border-width: 2px;
         }
@@ -393,6 +394,8 @@
         text-shadow: 0 0 30px rgba(255,255,255,0.5);
         animation: countdownPulse 1s ease-in-out;
     }
+
+
 
 </style>
 
@@ -451,8 +454,7 @@
         startTime: null,
         timer: null,
         numbers: [],
-        hintTimer: null,
-        lastNumberChangeTime: null
+        audioContext: null
     };
 
     // ===== 効果音システム =====
@@ -630,36 +632,6 @@
         }
     };
 
-    // ===== ヒント機能 =====
-    function startHintTimer() {
-        clearHintTimer();
-        gameState.lastNumberChangeTime = Date.now();
-        
-        gameState.hintTimer = setTimeout(() => {
-            if (gameState.isPlaying) {
-                showHint();
-            }
-        }, 1000);
-    }
-
-    function clearHintTimer() {
-        if (gameState.hintTimer) {
-            clearTimeout(gameState.hintTimer);
-            gameState.hintTimer = null;
-        }
-        // 既存のヒント表示をクリア
-        const tiles = document.querySelectorAll('.number-tile');
-        tiles.forEach(tile => tile.classList.remove('hint'));
-    }
-
-    function showHint() {
-        if (!gameState.isPlaying) return;
-        
-        const targetTile = document.querySelector(`[data-number="${gameState.currentNumber}"]`);
-        if (targetTile && !targetTile.classList.contains('correct')) {
-            targetTile.classList.add('hint');
-        }
-    }
     // ===== ゲームロジック =====
     function handleTileClick(number, tile) {
         if (!gameState.isPlaying) return;
@@ -669,18 +641,15 @@
 
         if (number === gameState.currentNumber) {
             tile.classList.add('correct');
-            tile.classList.remove('hint');
             audio.playCorrect();
 
             if (gameState.currentNumber >= 25) {
                 document.getElementById('nextNumber').textContent = 'Clear!';
-                clearHintTimer();
                 setTimeout(() => audio.playComplete(), 200);
                 endGame();
             } else {
                 gameState.currentNumber++;
                 document.getElementById('nextNumber').textContent = gameState.currentNumber;
-                startHintTimer();
             }
         } else {
             tile.classList.add('wrong');
@@ -739,7 +708,6 @@
         
         grid.reveal();
         gameState.timer = setInterval(updateTimer, 10);
-        startHintTimer();
     }
 
     function startGame() {
@@ -776,8 +744,6 @@
         gameState.currentNumber = 1;
         gameState.startTime = null;
         
-        clearHintTimer();
-        
         if (gameState.timer) {
             clearInterval(gameState.timer);
             gameState.timer = null;
@@ -806,5 +772,6 @@
         grid.createEmpty();
     };
 </script>
+
 </body>
 </html>

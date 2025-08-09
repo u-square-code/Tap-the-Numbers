@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tap the Numbers</title>
+    <style>
+        /* ===== リセット・ベーススタイル ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+    html, body {
+        width: 100%;
+        height: 100%;
+        font-family: Arial, Helvetica, sans-serif;
+        background: linear-gradient(135deg, #7c2d12 0%, #ea580c 50%, #fb923c 100%);
+        background-attachment: fixed;
+    }
+
+    body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        overflow: hidden;
+        position: fixed;
+        top: 0;
+        left: 0;
+        touch-action: manipulation;
+    }
+
+    /* ===== メインコンテナ ===== */
+    .container {
+        text-align: center;
+        padding: 12px;
+        max-width: 500px;
+        width: 100%;
+        max-height: 100vh;
+        overflow-y: auto;
+        touch-action: manipulation;
+    }
+
+    /* ===== タイトル ===== */
+    h1 {
+        font-size: 1.4em;
+        margin-bottom: 8px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        font-weight: bold;
+    }
+
+    /* ===== ゲーム情報エリア ===== */
+    .game-info {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 8px;
+        background: rgba(255,255,255,0.1);
+        padding: 12px 20px;
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+    }
+
+    .info-item {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 80px;
+    }
+
+    .info-label {
+        font-size: 0.75em;
+        opacity: 0.8;
+        margin-bottom: 4px;
+        line-height: 1.2;
+    }
+
+    .info-value {
+        font-size: 1.1em;
+        font-weight: bold;
+        line-height: 1.2;
+    }
+
+    .best-time-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .clear-best-btn {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: rgba(220, 38, 38, 0.8);
+        color: white;
+        border: none;
+        font-size: 0.7em;
+        font-weight: bold;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        transition: all 0.2s ease;
+        opacity: 0.7;
+    }
+
+    .clear-best-btn:active {
+        transform: scale(0.9);
+    }
+
+    /* ===== ゲームグリッド ===== */
+    .game-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 4px;
+        margin: 8px 0;
+        padding: 8px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* ===== 数字タイル ===== */
+    .number-tile {
+        aspect-ratio: 1;
+        background: linear-gradient(145deg, #ea580c 0%, #dc2626 100%);
+        border: 3px solid rgba(255,255,255,0.3);
+        border-radius: 15px;
+        color: white;
+        font-size: 2.2em;
+        font-weight: 950;
+        font-family: Arial Black, Arial, Helvetica, sans-serif;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 50px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        position: relative;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* 光沢エフェクト */
+    .number-tile::before {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        right: 2px;
+        height: 40%;
+        background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+        border-radius: 10px 10px 20px 20px;
+        pointer-events: none;
+    }
+
+    .number-tile:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    /* ===== 数字タイルの状態 ===== */
+    /* ヒント表示 */
+    .number-tile.hint {
+        animation: hintPulse 1s ease-in-out infinite;
+    }
+
+    @keyframes hintPulse {
+        0%, 100% { 
+            transform: translateY(0) scale(1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+        50% { 
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(251,146,60,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
+            border-color: rgba(251,146,60,0.6);
+        }
+    }
+
+    /* ===== 数字タイルの状態 ===== */
+    /* 非表示・ゲーム開始前 */
+    .number-tile.hidden {
+        background: linear-gradient(145deg, #ea580c 0%, #dc2626 100%);
+        color: white;
+        cursor: pointer;
+        border-color: rgba(255,255,255,0.3);
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3);
+        font-weight: 900;
+        letter-spacing: 1px;
+    }
+
+    .number-tile.hidden:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    /* 正解済み */
+    .number-tile.correct {
+        background: linear-gradient(145deg, #9ca3af 0%, #6b7280 100%);
+        color: #d1d5db;
+        animation: pulseCorrect 0.4s ease;
+        pointer-events: none;
+        opacity: 0.3;
+        border-color: rgba(209,213,219,0.2);
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+
+    .number-tile.correct::before {
+        display: none;
+    }
+
+    /* 間違い */
+    .number-tile.wrong {
+        background: linear-gradient(145deg, #ff416c 0%, #ff4b2b 100%);
+        animation: shake 0.5s ease;
+        border-color: rgba(255,255,255,0.6);
+    }
+
+    /* ===== コントロールボタン ===== */
+    .controls {
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .btn {
+        background: linear-gradient(145deg, #f97316 0%, #ea580c 100%);
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        white-space: nowrap;
+    }
+
+    .btn:active {
+        transform: translateY(0);
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* ===== アニメーション ===== */
+    @keyframes pulseCorrect {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.15); box-shadow: 0 0 20px rgba(251,191,36,0.6); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    @keyframes countdownPulse {
+        0% { transform: scale(0.5); opacity: 0; }
+        50% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes newRecordGlow {
+        0% { 
+            box-shadow: 0 0 20px rgba(251,146,60,0.3);
+            border-color: rgba(251,146,60,0.8);
+        }
+        100% { 
+            box-shadow: 0 0 30px rgba(251,146,60,0.6);
+            border-color: rgba(251,146,60,1);
+        }
+    }
+
+    @keyframes hintPulse {
+        0%, 100% { 
+            transform: translateY(0) scale(1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+        50% { 
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(251,146,60,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
+            border-color: rgba(251,146,60,0.6);
+        }
+    }
+
+    /* ===== モーダル・オーバーレイ ===== */
+    .game-over-overlay {
+        display: none;
+    }
+
+    .game-over {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255,255,255,0.2);
+        border: 2px solid rgba(255,255,255,0.3);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5);
+        z-index: 1000;
+        max-width: 320px;
+        width: 75%;
+        backdrop-filter: blur(3px);
+    }
+
+    .best-time {
+        background: linear-gradient(135deg, rgba(251,146,60,0.4) 0%, rgba(249,115,22,0.4) 100%);
+        padding: 15px;
+        border-radius: 10px;
+        margin: 15px 0;
+        border: 2px solid rgba(251,146,60,0.8);
+        box-shadow: 0 0 20px rgba(251,146,60,0.3);
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.1em;
+        text-shadow: 0 0 10px rgba(251,146,60,0.5);
+        animation: newRecordGlow 2s ease-in-out infinite alternate;
+    }
+
+    /* ===== 最小限のレスポンシブデザイン ===== */
+    @media (max-width: 480px) {
+        .container {
+            max-width: 100%;
+            padding: 8px;
+        }
+        
+        .game-grid {
+            gap: 3px;
+            padding: 6px;
+            margin: 6px 0;
+        }
+        
+        .number-tile {
+            font-size: 1.9em;
+            min-height: 45px;
+            border-width: 2px;
+        }
+        
+        h1 {
+            font-size: 1.3em;
+            margin-bottom: 8px;
+        }
+    }
+
+    /* ===== カウントダウンオーバーレイ ===== */
+    .countdown-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(3px);
+    }
+
+    .countdown-number {
+        font-size: 8em;
+        font-weight: bold;
+        color: white;
+        text-shadow: 0 0 30px rgba(255,255,255,0.5);
+        animation: countdownPulse 1s ease-in-out;
+    }
+
+</style>
+
+</head>
+<body>
+    <div class="container">
+        <h1>Tap the Numbers</h1>
+
+    <div class="game-info">
+        <div class="info-item">
+            <div class="info-label">次の数字</div>
+            <div class="info-value" id="nextNumber">1</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">経過時間</div>
+            <div class="info-value" id="timer">0.00秒</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">ベストタイム</div>
+            <div class="info-value best-time-container">
+                <span id="bestTime">--</span>
+                <button class="clear-best-btn" id="clearBestX" onclick="clearBestTime()" style="display: none;">×</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-grid" id="gameGrid"></div>
+
+    <div class="controls">
+        <button class="btn" id="startBtn" onclick="startGame()">ゲーム開始</button>
+        <button class="btn" id="resetBtn" onclick="resetGame()" style="display: none;">リセット</button>
+    </div>
+
+    <!-- ゲーム終了モーダル -->
+    <div id="gameOverOverlay" class="game-over-overlay" style="display: none;"></div>
+    <div id="gameOverModal" class="game-over" style="display: none;">
+        <h2>Clear!</h2>
+        <p>あなたのタイム: <strong id="finalTime"></strong></p>
+        <div id="newRecord" class="best-time" style="display: none;">
+            新記録達成！
+        </div>
+        <button class="btn" onclick="startGame()">もう一度プレイ</button>
+    </div>
+
+    <!-- カウントダウンオーバーレイ -->
+    <div id="countdownOverlay" class="countdown-overlay" style="display: none;">
+        <div id="countdownDisplay" class="countdown-number">3</div>
+    </div>
+</div>
+
+<script>
+    // ===== ゲーム状態管理 =====
+    let gameState = {
+        isPlaying: false,
+        currentNumber: 1,
+        startTime: null,
+        timer: null,
+        numbers: [],
+        hintTimer: null,
+        lastNumberChangeTime: null
+    };
+
+    // ===== 効果音システム =====
+    const audio = {
+        context: null,
+        init() {
+            if (!this.context) {
+                try {
+                    this.context = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('Web Audio API not supported');
+                }
+            }
+        },
+        playSound(frequency, duration, type = 'sine', volume = 0.3) {
+            if (!this.context) return;
+            
+            const oscillator = this.context.createOscillator();
+            const gainNode = this.context.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.context.destination);
+            
+            oscillator.frequency.setValueAtTime(frequency, this.context.currentTime);
+            oscillator.type = type;
+            
+            gainNode.gain.setValueAtTime(0, this.context.currentTime);
+            gainNode.gain.linearRampToValueAtTime(volume, this.context.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, this.context.currentTime + duration);
+            
+            oscillator.start(this.context.currentTime);
+            oscillator.stop(this.context.currentTime + duration);
+        },
+        playCorrect() {
+            if (!this.context) return;
+            
+            const bufferSize = this.context.sampleRate * 0.1;
+            const buffer = this.context.createBuffer(1, bufferSize, this.context.sampleRate);
+            const output = buffer.getChannelData(0);
+            
+            // ホワイトノイズ生成とエンベロープ適用
+            for (let i = 0; i < bufferSize; i++) {
+                const envelope = Math.exp(-i / (bufferSize * 0.1));
+                output[i] = (Math.random() * 2 - 1) * envelope * 0.6;
+            }
+            
+            const source = this.context.createBufferSource();
+            const gainNode = this.context.createGain();
+            const filter = this.context.createBiquadFilter();
+            
+            filter.type = 'highpass';
+            filter.frequency.setValueAtTime(1000, this.context.currentTime);
+            
+            source.buffer = buffer;
+            source.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(this.context.destination);
+            
+            gainNode.gain.setValueAtTime(0.7, this.context.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, this.context.currentTime + 0.1);
+            
+            source.start(this.context.currentTime);
+        },
+        playWrong() {
+            this.playSound(150, 0.3, 'square', 0.2);
+        },
+        playCountdown() {
+            this.playSound(800, 0.1, 'square', 0.15);
+        },
+        playGo() {
+            this.playSound(1600, 0.1, 'square', 0.15);
+        },
+        playComplete() {
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            notes.forEach((note, index) => {
+                setTimeout(() => this.playSound(note, 0.2), index * 100);
+            });
+        }
+    };
+
+    // ===== ローカルストレージ管理 =====
+    const storage = {
+        getBestTime() {
+            try {
+                return localStorage.getItem('numberTouchBestTime');
+            } catch (e) {
+                return null;
+            }
+        },
+        setBestTime(time) {
+            try {
+                localStorage.setItem('numberTouchBestTime', time);
+            } catch (e) {
+                console.log('LocalStorage not available');
+            }
+        },
+        clearBestTime() {
+            try {
+                localStorage.removeItem('numberTouchBestTime');
+                this.updateDisplay();
+            } catch (e) {
+                console.log('LocalStorage not available');
+            }
+        },
+        updateDisplay() {
+            const bestTime = this.getBestTime();
+            const bestTimeElement = document.getElementById('bestTime');
+            const clearButton = document.getElementById('clearBestX');
+            
+            if (bestTime) {
+                bestTimeElement.textContent = bestTime + '秒';
+                clearButton.style.display = 'flex';
+            } else {
+                bestTimeElement.textContent = '--';
+                clearButton.style.display = 'none';
+            }
+        }
+    };
+
+    // グローバル関数として公開（HTMLから呼ばれるため）
+    function clearBestTime() {
+        storage.clearBestTime();
+    }
+
+    // ===== ユーティリティ関数 =====
+    function shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
+
+    // ===== グリッド管理 =====
+    const grid = {
+        createEmpty() {
+            const gridElement = document.getElementById('gameGrid');
+            gridElement.innerHTML = '';
+            
+            for (let i = 0; i < 25; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'number-tile hidden';
+                tile.textContent = '';
+                gridElement.appendChild(tile);
+            }
+        },
+        createGame() {
+            const gridElement = document.getElementById('gameGrid');
+            gridElement.innerHTML = '';
+            
+            gameState.numbers = shuffleArray([...Array(25)].map((_, i) => i + 1));
+            
+            gameState.numbers.forEach((num) => {
+                const tile = document.createElement('button');
+                tile.className = 'number-tile hidden';
+                tile.textContent = '';
+                tile.dataset.number = num;
+                tile.onclick = (event) => handleTileClick(num, tile);
+                tile.ontouchstart = (event) => {
+                    event.preventDefault();
+                    handleTileClick(num, tile);
+                };
+                gridElement.appendChild(tile);
+            });
+        },
+        reveal() {
+            const tiles = document.querySelectorAll('.number-tile');
+            tiles.forEach(tile => {
+                tile.classList.remove('hidden');
+                if (tile.dataset.number) {
+                    tile.textContent = tile.dataset.number;
+                }
+            });
+        }
+    };
+
+    // ===== ヒント機能 =====
+    function startHintTimer() {
+        clearHintTimer();
+        gameState.lastNumberChangeTime = Date.now();
+        
+        gameState.hintTimer = setTimeout(() => {
+            if (gameState.isPlaying) {
+                showHint();
+            }
+        }, 1000);
+    }
+
+    function clearHintTimer() {
+        if (gameState.hintTimer) {
+            clearTimeout(gameState.hintTimer);
+            gameState.hintTimer = null;
+        }
+        // 既存のヒント表示をクリア
+        const tiles = document.querySelectorAll('.number-tile');
+        tiles.forEach(tile => tile.classList.remove('hint'));
+    }
+
+    function showHint() {
+        if (!gameState.isPlaying) return;
+        
+        const targetTile = document.querySelector(`[data-number="${gameState.currentNumber}"]`);
+        if (targetTile && !targetTile.classList.contains('correct')) {
+            targetTile.classList.add('hint');
+        }
+    }
+    // ===== ゲームロジック =====
+    function handleTileClick(number, tile) {
+        if (!gameState.isPlaying) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (number === gameState.currentNumber) {
+            tile.classList.add('correct');
+            tile.classList.remove('hint');
+            audio.playCorrect();
+
+            if (gameState.currentNumber >= 25) {
+                document.getElementById('nextNumber').textContent = 'Clear!';
+                clearHintTimer();
+                setTimeout(() => audio.playComplete(), 200);
+                endGame();
+            } else {
+                gameState.currentNumber++;
+                document.getElementById('nextNumber').textContent = gameState.currentNumber;
+                startHintTimer();
+            }
+        } else {
+            tile.classList.add('wrong');
+            audio.playWrong();
+            setTimeout(() => tile.classList.remove('wrong'), 500);
+        }
+    }
+
+    function updateTimer() {
+        if (!gameState.isPlaying || !gameState.startTime) return;
+        
+        const elapsed = (Date.now() - gameState.startTime) / 1000;
+        const timeText = elapsed.toFixed(2) + '秒';
+        document.getElementById('timer').textContent = timeText;
+        
+        gameState.lastRecordedTime = elapsed.toFixed(2);
+    }
+
+    function startCountdown() {
+        audio.init();
+        
+        const overlay = document.getElementById('countdownOverlay');
+        const display = document.getElementById('countdownDisplay');
+        
+        overlay.style.display = 'flex';
+        let count = 3;
+        
+        display.textContent = count;
+        display.className = 'countdown-number';
+        audio.playCountdown();
+        count--;
+        
+        const countdownInterval = setInterval(() => {
+            if (count > 0) {
+                display.textContent = count;
+                display.className = 'countdown-number';
+                audio.playCountdown();
+                count--;
+            } else {
+                audio.playGo();
+                overlay.style.display = 'none';
+                actuallyStartGame();
+                clearInterval(countdownInterval);
+            }
+        }, 1000);
+    }
+
+    function actuallyStartGame() {
+        gameState.isPlaying = true;
+        gameState.currentNumber = 1;
+        gameState.startTime = Date.now();
+        
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('resetBtn').style.display = 'inline-block';
+        document.getElementById('nextNumber').textContent = '1';
+        
+        grid.reveal();
+        gameState.timer = setInterval(updateTimer, 10);
+        startHintTimer();
+    }
+
+    function startGame() {
+        document.getElementById('gameOverModal').style.display = 'none';
+        document.getElementById('gameOverOverlay').style.display = 'none';
+        grid.createGame();
+        startCountdown();
+    }
+
+    function endGame() {
+        gameState.isPlaying = false;
+        clearInterval(gameState.timer);
+        
+        const finalTime = gameState.lastRecordedTime || '0.00';
+        document.getElementById('finalTime').textContent = finalTime + '秒';
+        
+        const currentBest = storage.getBestTime();
+        const isNewRecord = !currentBest || parseFloat(finalTime) < parseFloat(currentBest);
+        
+        if (isNewRecord) {
+            storage.setBestTime(finalTime);
+            document.getElementById('newRecord').style.display = 'block';
+            storage.updateDisplay();
+        } else {
+            document.getElementById('newRecord').style.display = 'none';
+        }
+        
+        document.getElementById('gameOverModal').style.display = 'block';
+        document.getElementById('gameOverOverlay').style.display = 'block';
+    }
+
+    function resetGame() {
+        gameState.isPlaying = false;
+        gameState.currentNumber = 1;
+        gameState.startTime = null;
+        
+        clearHintTimer();
+        
+        if (gameState.timer) {
+            clearInterval(gameState.timer);
+            gameState.timer = null;
+        }
+        
+        document.getElementById('startBtn').style.display = 'inline-block';
+        document.getElementById('resetBtn').style.display = 'none';
+        document.getElementById('nextNumber').textContent = '1';
+        document.getElementById('timer').textContent = '0.00秒';
+        document.getElementById('gameOverModal').style.display = 'none';
+        document.getElementById('gameOverOverlay').style.display = 'none';
+        
+        // カウントダウンオーバーレイをリセット
+        const overlay = document.getElementById('countdownOverlay');
+        const display = document.getElementById('countdownDisplay');
+        overlay.style.display = 'none';
+        display.textContent = '3';
+        display.className = 'countdown-number';
+        
+        grid.createEmpty();
+    }
+
+    // ===== 初期化 =====
+    window.onload = function() {
+        storage.updateDisplay();
+        grid.createEmpty();
+    };
+</script>
+</body>
+</html>

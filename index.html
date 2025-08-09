@@ -12,7 +12,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-
+        
     html, body {
         width: 100%;
         height: 100%;
@@ -361,7 +361,7 @@
         }
         
         .number-tile {
-            font-size: 1.6em;
+            font-size: 1.9em;
             min-height: 45px;
             border-width: 2px;
         }
@@ -395,15 +395,11 @@
         animation: countdownPulse 1s ease-in-out;
     }
 
-
-
 </style>
-
 </head>
 <body>
     <div class="container">
         <h1>Tap the Numbers</h1>
-
     <div class="game-info">
         <div class="info-item">
             <div class="info-label">次の数字</div>
@@ -454,7 +450,8 @@
         startTime: null,
         timer: null,
         numbers: [],
-        audioContext: null
+        hintTimer: null,
+        lastNumberChangeTime: null
     };
 
     // ===== 効果音システム =====
@@ -632,6 +629,36 @@
         }
     };
 
+    // ===== ヒント機能 =====
+    function startHintTimer() {
+        clearHintTimer();
+        gameState.lastNumberChangeTime = Date.now();
+        
+        gameState.hintTimer = setTimeout(() => {
+            if (gameState.isPlaying) {
+                showHint();
+            }
+        }, 1000);
+    }
+
+    function clearHintTimer() {
+        if (gameState.hintTimer) {
+            clearTimeout(gameState.hintTimer);
+            gameState.hintTimer = null;
+        }
+        // 既存のヒント表示をクリア
+        const tiles = document.querySelectorAll('.number-tile');
+        tiles.forEach(tile => tile.classList.remove('hint'));
+    }
+
+    function showHint() {
+        if (!gameState.isPlaying) return;
+        
+        const targetTile = document.querySelector(`[data-number="${gameState.currentNumber}"]`);
+        if (targetTile && !targetTile.classList.contains('correct')) {
+            targetTile.classList.add('hint');
+        }
+    }
     // ===== ゲームロジック =====
     function handleTileClick(number, tile) {
         if (!gameState.isPlaying) return;
@@ -641,15 +668,18 @@
 
         if (number === gameState.currentNumber) {
             tile.classList.add('correct');
+            tile.classList.remove('hint');
             audio.playCorrect();
 
             if (gameState.currentNumber >= 25) {
                 document.getElementById('nextNumber').textContent = 'Clear!';
+                clearHintTimer();
                 setTimeout(() => audio.playComplete(), 200);
                 endGame();
             } else {
                 gameState.currentNumber++;
                 document.getElementById('nextNumber').textContent = gameState.currentNumber;
+                startHintTimer();
             }
         } else {
             tile.classList.add('wrong');
@@ -708,6 +738,7 @@
         
         grid.reveal();
         gameState.timer = setInterval(updateTimer, 10);
+        startHintTimer();
     }
 
     function startGame() {
@@ -744,6 +775,8 @@
         gameState.currentNumber = 1;
         gameState.startTime = null;
         
+        clearHintTimer();
+        
         if (gameState.timer) {
             clearInterval(gameState.timer);
             gameState.timer = null;
@@ -771,7 +804,7 @@
         storage.updateDisplay();
         grid.createEmpty();
     };
-</script>
 
+</script>
 </body>
 </html>

@@ -248,15 +248,17 @@
     }
 
     @keyframes newRecordGlow {
-        0% { 
-            box-shadow: 0 0 20px rgba(251,146,60,0.3);
-            border-color: rgba(251,146,60,0.1);
-        }
-        100% { 
-            box-shadow: 0 0 30px rgba(251,146,60,0.9);
-            border-color: rgba(251,146,60,1);
-        }
+    0% { 
+        box-shadow: 0 0 15px rgba(251,146,60,0.2);
+        border-color: rgba(251,146,60,0.6);
+        background: linear-gradient(135deg, rgba(251,146,60,0.3) 0%, rgba(249,115,22,0.3) 100%);
     }
+    100% { 
+        box-shadow: 0 0 40px rgba(251,146,60,0.9);
+        border-color: rgba(251,146,60,1);
+        background: linear-gradient(135deg, rgba(251,146,60,0.7) 0%, rgba(249,115,22,0.7) 100%);
+    }
+}
 
     @keyframes hintPulse {
         0%, 100% { 

@@ -114,10 +114,6 @@
         opacity: 0.7;
     }
 
-    .clear-best-btn:active {
-        transform: scale(0.9);
-    }
-
     /* ===== ゲームグリッド ===== */
     .game-grid {
         display: grid;
@@ -178,18 +174,6 @@
         animation: hintPulse 1s ease-in-out infinite;
     }
 
-    @keyframes hintPulse {
-        0%, 100% { 
-            transform: translateY(0) scale(1);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3);
-        }
-        50% { 
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 8px 25px rgba(251,146,60,0.4), inset 0 1px 0 rgba(255,255,255,0.4);
-            border-color: rgba(251,146,60,0.6);
-        }
-    }
-
     /* ===== 数字タイルの状態 ===== */
     /* 非表示・ゲーム開始前 */
     .number-tile.hidden {
@@ -200,7 +184,6 @@
         text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
         box-shadow: 0 6px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3);
         font-weight: bold;
-        letter-spacing: 1px;
     }
 
     /* 正解済み */

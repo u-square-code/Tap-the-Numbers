@@ -663,6 +663,7 @@
         const display = document.getElementById('countdownDisplay');
         
         overlay.style.display = 'flex';
+        document.getElementById('startBtn').style.display = 'none';
         let count = 3;
         
         display.textContent = count;
@@ -690,7 +691,6 @@
         gameState.currentNumber = 1;
         gameState.startTime = Date.now();
         
-        document.getElementById('startBtn').style.display = 'none';
         document.getElementById('resetBtn').style.display = 'inline-block';
         document.getElementById('nextNumber').textContent = '1';
         
